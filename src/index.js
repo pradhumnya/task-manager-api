@@ -1,12 +1,14 @@
 //Gets the express app running but what it does is defined in the routers
-const express = require('express')
-require('./db/mongoose.js')
-const User = require('./models/user.js') //no need to add .js extension
-const Task = require('./models/task.js')
-const userRouter = require('./routers/users')
-const taskRouter = require('./routers/tasks')
+// const express = require('express')
+// require('./db/mongoose.js')
+// const User = require('./models/user.js') //no need to add .js extension
+// const Task = require('./models/task.js')
+// const userRouter = require('./routers/users')
+// const taskRouter = require('./routers/tasks')
 
-const app = express()
+// const app = express()
+
+const app = require('./app')
 const port = process.env.PORT 
 
 // app.use((req, res, next) => {
@@ -29,29 +31,29 @@ const port = process.env.PORT
 // })
 
 //Middleware should be above these. With Middleware: new request --> do something --> route handler
-app.use(express.json()) //used to parse the incoming data and use it to create new user in the req handler
-app.use(userRouter)
-app.use(taskRouter)
+// app.use(express.json()) //used to parse the incoming data and use it to create new user in the req handler
+// app.use(userRouter)
+// app.use(taskRouter)
 // const router = new express.Router()
 // router.get('/test', (req,res) => res.send('This is a test case'))
 // app.use(router)//registering the router with our express app
 
-const multer = require('multer') //multer = multipart. Express doesn't support file uploads but this npm library allows use to do so with express
-const upload = multer({
-    dest: 'images', //destination of uploads
-    limits: 10000000,
-    fileFilter(req, file, cb) {
-        if(!file.originalname.endsWith('.pdf')){  //orignalname returns name of the file on the user's computer
-            return cb(new Error('Please upload a PDF format file'))
-        }
-        if(!file.originalname.match(/\.(doc|docx)/)){  // used to reject files that are not doc or docx
-            return cb(new Error('Please upload a DOC format file'))
-        }
-    }
-})
-app.post('/uploads', upload.single('upload'), (req,res) => {  //multer provides middleware. whatever string is passed is passed in single should be the name of key in postman
-    res.send('sent')
-})
+// const multer = require('multer') //multer = multipart. Express doesn't support file uploads but this npm library allows use to do so with express
+// const upload = multer({
+//     dest: 'images', //destination of uploads
+//     limits: 10000000,
+//     fileFilter(req, file, cb) {
+//         if(!file.originalname.endsWith('.pdf')){  //orignalname returns name of the file on the user's computer
+//             return cb(new Error('Please upload a PDF format file'))
+//         }
+//         if(!file.originalname.match(/\.(doc|docx)/)){  // used to reject files that are not doc or docx
+//             return cb(new Error('Please upload a DOC format file'))
+//         }
+//     }
+// })
+// app.post('/uploads', upload.single('upload'), (req,res) => {  //multer provides middleware. whatever string is passed is passed in single should be the name of key in postman
+//     res.send('sent')
+// })
 
 
 
