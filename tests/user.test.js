@@ -1,23 +1,9 @@
 const request = require('supertest')
 const app = require('../src/app')
 const User = require('../src/models/user')
-const jwt = require('jsonwebtoken')
-const mongoose = require('mongoose')
-const userOneId = new mongoose.Types.ObjectId()
-const userOne = {
-    _id: userOneId,
-    name: 'Mike',
-    email: 'mike@example.com',
-    password: '234qwerty!',
-    tokens: [{
-        token: jwt.sign({ _id: userOneId }, process.env.JWT_SECRET)   
-    }]
-}
+const { userOne, userOneId, setupDatabase} = require('./fixtures/db')
 
-beforeEach(async () => {
-    await User.deleteMany()  //we wipe the data in database as email id can't be registered twice
-    await new User(userOne).save()
-})
+beforeEach(setupDatabase)
 
 test('Should signup a new user', async () => {
     const response = await request(app).post('/users').send({
@@ -46,7 +32,7 @@ test('Should login existing user', async () => {
         password: userOne.password
     }).expect(200)
     const user = await User.findById(userOneId)
-    console.log(response.body)
+    // console.log(response.body)
     expect(user).not.toBeNull()
     expect(response.body.token).toBe(user.tokens[1].token)
 })
@@ -58,13 +44,12 @@ test('Should not login non existing user', async () => {
     }).expect(400)
 })
 
-test('Should get profile for user', (done) => {
-    request(app)
+test('Should get profile for user', async () => {
+    await request(app)
         .get('/users/me')
         .set('Authorization', `Bearer ${userOne.tokens[0].token}`)
         .send()
         .expect(200)
-    done()
 })
 
 test('Should not get profile for unauthenticated user', async () => {
@@ -74,14 +59,13 @@ test('Should not get profile for unauthenticated user', async () => {
         .expect(401)
 })
 
-test('Should delete account for User', (done) => {
-    const response = request(app)
+test('Should delete account for User',async () => {
+    const response = await request(app)
         .delete('/users/me')
         .set('Authorization', `Bearer ${userOne.tokens[0].token}`)
         .send()
         .expect(200)
     // console.log(response)
-    done()
     const user = User.findById(userOneId)
     expect(user).toBeNull()
 })
@@ -90,5 +74,38 @@ test('Should not delete account for unauthenticated user', async () => {
     await request(app)
         .delete('/users/me')
         .send()
+        .expect(401)
+})
+
+test('should upload an avatar image', async () => {
+    await request(app)
+        .post('/users/me/avatar')
+        .set('Authorization', `Bearer ${userOne.tokens[0].token}`)
+        .attach('avatar', 'tests/fixtures/24866.jpg')
+        .expect(200)
+    const user = await User.findById(userOneId)
+    expect(user.avatar).toEqual(expect.any(Buffer))  //checking that the avatar is equal to the buffer type. Expect.any is used to check whether it is of some datatype mentioned
+})
+
+test('Should update valid user field', async () => {
+    await request(app)
+        .patch('/users/me')
+        .set('Authorization', `Bearer ${userOne.tokens[0].token}`)
+        .send({
+            name: 'Lenna'
+        })
+        .expect(200)
+    const user = await User.findById(userOneId)
+    expect(user.name).toEqual('Lenna')
+
+})
+
+test('Should not update valid user field', async () => {
+    await request(app)
+        .patch('/users/me')
+        .set('Authorization', `Bearer ${userOne.tokens[0].token}`)
+        .send({
+            location: 'USA'
+        })
         .expect(401)
 })
